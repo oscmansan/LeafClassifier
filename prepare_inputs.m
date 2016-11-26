@@ -16,5 +16,6 @@ for i = 1:n
     class = int32(str2num(fn(2:end-9)));
     targets(class,i) = 1;
     
+    BW = bwmorph(BW,'remove');
     imshow(BW);
 end
