@@ -1,6 +1,6 @@
-files = dir('../data/all');
+files = dir('../data/leaf*/*.tif');
 
-n = length(files)-2;
+n = length(files);
 
 imsize = 512;
 
@@ -28,8 +28,10 @@ for i = 1:n
     targets(i) = class;
     
     BW = bwmorph(BW,'remove');
+    imshow(BW);
 end
 
 [labels,scores] = predict(classifier,inputs);
 
-disp(sum(isequal(labels,targets)));
+labels = cellfun(@str2num,labels);
+disp(sum(labels ~= targets));

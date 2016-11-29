@@ -1,3 +1,7 @@
+addpath('/home/oscar/Documentos/vc/projecte/LeafClassifier/subconjunt');
+addpath('/home/oscar/Documentos/vc/projecte/centerobject');
+close all;
+
 files = dir('subconjunt');
 n = length(files)-2;
 
@@ -35,4 +39,5 @@ s = similarity(inputs, targets);
 classifier = TreeBagger(100, inputs, targets);
 [labels,scores] = predict(classifier,inputs);
 
-disp(sum(isequal(labels,targets)));
+labels = cellfun(@str2num,labels);
+disp(sum(labels ~= targets));
