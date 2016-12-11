@@ -5,7 +5,7 @@ features = extractHOGFeatures(BW,'CellSize',[16 16]);
 hogFeatureSize = length(features);
 
 
-%% training
+%% feature extraction
 
 files = dir('../data/leaf*/*.tif');
 n = length(files);
@@ -30,30 +30,23 @@ for i = 1:n
     fprintf('Extracting features of %s\n',fn);
 end
 
-classifier = fitcecoc(inputs,targets);
 
+%% k-fold cross-validation
 
-%% testing
+k = 10;
+indices = crossvalind('Kfold',targets,k);
 
-files = dir('subconjunt/*.tif');
-n = length(files);
-
-testLabels = zeros(n,1);
-predictedLabels = zeros(n,1);
-
-for i = 1:n
-    folder = files(i).folder;
-    fn = files(i).name;
+cp = classperf(targets);
+for i = 1:k
+    fprintf('fold %d',i);
     
-    I = imread(strcat(folder,'/',fn));
-    I = imresize(I,0.25);
-    BW = preprocess(I,512);
+    test = (indices == i); train = ~test;
     
-    features = extractHOGFeatures(BW,'CellSize',[16 16]);
+    classifier = fitcecoc(inputs(train,:),targets(train,:));
+    labels = predict(classifier,inputs(test,:));
     
-    testLabels(i) = int32(str2num(fn(2:end-9)));
-    predictedLabels(i) = predict(classifier,features);
+    classperf(cp,labels,test);
 end
 
-confMat = confusionmat(testLabels, predictedLabels);
-disp(confMat);
+disp(cp.CountingMatrix);
+fprintf('accuracy: %f',cp.CorrectRate);
