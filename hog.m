@@ -38,7 +38,7 @@ indices = crossvalind('Kfold',targets,k);
 
 cp = classperf(targets);
 for i = 1:k
-    fprintf('fold %d',i);
+    fprintf('fold %d\n',i);
     
     test = (indices == i); train = ~test;
     
@@ -49,4 +49,4 @@ for i = 1:k
 end
 
 disp(cp.CountingMatrix);
-fprintf('accuracy: %f',cp.CorrectRate);
+fprintf('accuracy: %f\n',cp.CorrectRate);
