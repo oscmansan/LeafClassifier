@@ -1,3 +1,6 @@
+addpath('/home/oscar/Documentos/vc/projecte/data');
+close all;
+
 files = dir('../data/leaf*/*.tif');
 
 n = length(files);

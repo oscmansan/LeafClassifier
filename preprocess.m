@@ -1,4 +1,5 @@
 function BW = preprocess(I, imsize)
+    addpath('centerobject/');
     GS = rgb2gray(I);
     BW = GS < 200;
     BW = imfill(BW,'holes');
