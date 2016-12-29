@@ -2,12 +2,11 @@ close all;
 
 K = 65;
 
-I = imread('./subconjunt/l10nr006.tif');
-I = imresize(I,0.25);
+I = imread('../data/leaf1/l1nr001.tif');
 I = square(I);
 I = imresize(I,[512 512]);
-GS = rgb2gray(I);
-features = extractHOGFeatures(GS,'CellSize',[K K]);
+I = rgb2gray(I);
+features = extractHOGFeatures(I,'CellSize',[K K]);
 hogFeatureSize = length(features);
 
 %% feature extraction
@@ -18,42 +17,39 @@ n = length(files);
 inputs = zeros(n,hogFeatureSize);
 targets = zeros(n,1);
 
-for i = 1:n
+for i=1:n
     folder = files(i).folder;
     fn = files(i).name;
     
     I = imread(strcat(folder,'/',fn));
-    I = imresize(I,0.25);
     I = square(I);
     I = imresize(I,[512 512]);
-    GS = rgb2gray(I);
+    I = rgb2gray(I);
     
-    inputs(i,:) = extractHOGFeatures(GS,'CellSize',[K K]);
+    [featureVector,hogVisualization] = extractHOGFeatures(I,'CellSize',[K K]);
+    inputs(i,:) = featureVector;
+    plot(hogVisualization); drawnow;
     
     class = int32(str2num(fn(2:end-9)));
     targets(i) = class;
 
     fprintf('Extracting features of %s\n',fn);
 end
+close all;
 
 
 %% k-fold cross-validation
 
 k = 10;
-indices = crossvalind('Kfold',targets,k);
+fprintf('\nRunning %d-fold cross-validation...\n\n',k);
 
-cp = classperf(targets);
-for i = 1:k
-    fprintf('fold %d\n',i);
-    
-    test = (indices == i); train = ~test;
-    
-    classifier = fitcecoc(inputs(train,:),targets(train,:)); % svm
-    
-    labels = predict(classifier,inputs(test,:));
-    
-    classperf(cp,labels,test);
-end
+classifier = fitcecoc(inputs,targets);
+options = statset('UseParallel',true);
+model = crossval(classifier,'KFold', k,'options',options);
 
-disp(cp.CountingMatrix);
-fprintf('accuracy: %f\n',cp.CorrectRate);
+[labels, scores] = kfoldPredict(model);
+confmat = confusionmat(targets,labels);
+disp(confmat);
+
+accuracy = 1 - kfoldLoss(model, 'LossFun', 'ClassifError');
+fprintf('accuracy: %f\n',accuracy);
