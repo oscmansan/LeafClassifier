@@ -9,6 +9,7 @@ I = rgb2gray(I);
 features = extractHOGFeatures(I,'CellSize',[K K]);
 hogFeatureSize = length(features);
 
+
 %% feature extraction
 
 files = dir('../data/leaf*/*.tif');
@@ -52,4 +53,32 @@ confmat = confusionmat(targets,labels);
 disp(confmat);
 
 accuracy = 1 - kfoldLoss(model, 'LossFun', 'ClassifError');
-fprintf('accuracy: %f\n',accuracy);
+fprintf('accuracy: %f\n\n',accuracy);
+
+
+%% test
+
+files = dir('../data/test/*.tif');
+n = length(files);
+
+truelabels = zeros(n,1);
+classout = zeros(n,1);
+
+for i=1:n
+    folder = files(i).folder;
+    fn = files(i).name;
+    
+    I = imread(strcat(folder,'/',fn));
+    I = square(I);
+    I = imresize(I,[512 512]);
+    I = rgb2gray(I);
+
+    featureVector = extractHOGFeatures(I,'CellSize',[K K]);
+    classout(i) = predict(classifier,featureVector);
+    
+    truelabels(i) = int32(str2num(fn(2:end-9)));
+end
+
+cp = classperf(truelabels,classout);
+disp(cp.CountingMatrix);
+fprintf('accuracy: %f\n',cp.CorrectRate);
