@@ -18,6 +18,7 @@ n = length(files);
 inputs = zeros(n,hogFeatureSize);
 targets = zeros(n,1);
 
+tic
 for i=1:n
     folder = files(i).folder;
     fn = files(i).name;
@@ -36,6 +37,7 @@ for i=1:n
 
     fprintf('Extracting features of %s\n',fn);
 end
+toc
 close all;
 
 
@@ -77,8 +79,11 @@ for i=1:n
     classout(i) = predict(classifier,featureVector);
     
     truelabels(i) = int32(str2num(fn(2:end-9)));
+    
+    fprintf('Predicting class of %s\n',fn);
 end
 
+fprintf('\nValidation confusion matrix:\n\n');
 cp = classperf(truelabels,classout);
 disp(cp.CountingMatrix);
 fprintf('accuracy: %f\n',cp.CorrectRate);
