@@ -15,8 +15,8 @@ hogFeatureSize = length(features);
 files = dir('../data/leaf*/*.tif');
 n = length(files);
 
-inputs = zeros(n,hogFeatureSize);
-targets = zeros(n,1);
+inputs = zeros(hogFeatureSize,n);
+targets = zeros(15,n);
 
 tic
 for i=1:n
@@ -29,11 +29,11 @@ for i=1:n
     I = rgb2gray(I);
     
     [featureVector,hogVisualization] = extractHOGFeatures(I,'CellSize',[K K]);
-    inputs(i,:) = featureVector;
+    inputs(:,i) = featureVector';
     plot(hogVisualization); drawnow;
     
     class = int32(str2num(fn(2:end-9)));
-    targets(i) = class;
+    targets(class,i) = 1;
 
     fprintf('Extracting features of %s\n',fn);
 end
@@ -41,21 +41,32 @@ toc
 close all;
 
 
-%% k-fold cross-validation
+%% train
 
-k = 10;
-fprintf('\nRunning %d-fold cross-validation...\n\n',k);
+% 'trainlm' is usually fastest.
+% 'trainbr' takes longer but may be better for challenging problems.
+% 'trainscg' uses less memory. Suitable in low memory situations.
+trainFcn = 'trainscg';  % Scaled conjugate gradient backpropagation.
 
-classifier = fitcecoc(inputs,targets);
-options = statset('UseParallel',true);
-model = crossval(classifier,'KFold', k,'options',options);
+% Create a Pattern Recognition Network
+hiddenLayerSize = 20;
+net = patternnet(hiddenLayerSize, trainFcn);
 
-[labels, scores] = kfoldPredict(model);
-confmat = confusionmat(targets,labels);
-disp(confmat);
+% Setup Division of Data for Training, Validation, Testing
+net.divideParam.trainRatio = 70/100;
+net.divideParam.valRatio = 15/100;
+net.divideParam.testRatio = 15/100;
 
-accuracy = 1 - kfoldLoss(model, 'LossFun', 'ClassifError');
-fprintf('accuracy: %f\n\n',accuracy);
+% Train the Network
+[net,tr] = train(net,inputs,targets);
+nntraintool('close');
+
+% Test the Network
+outputs = net(inputs);
+[c,cm] = confusion(targets,outputs);
+fprintf('\nTest confusion matrix:\n\n');
+disp(cm);
+fprintf('accuracy: %f\n',1-c);
 
 
 %% test
@@ -63,8 +74,8 @@ fprintf('accuracy: %f\n\n',accuracy);
 files = dir('../data/test/*.tif');
 n = length(files);
 
-truelabels = zeros(n,1);
-classout = zeros(n,1);
+truelabels = zeros(15,n);
+classout = zeros(15,n);
 
 for i=1:n
     folder = files(i).folder;
@@ -76,14 +87,15 @@ for i=1:n
     I = rgb2gray(I);
 
     featureVector = extractHOGFeatures(I,'CellSize',[K K]);
-    classout(i) = predict(classifier,featureVector);
+    classout(:,i) = net(featureVector');
     
-    truelabels(i) = int32(str2num(fn(2:end-9)));
+    class = int32(str2num(fn(2:end-9)));
+    truelabels(class,i) = 1;
     
     fprintf('Predicting class of %s\n',fn);
 end
 
+[c,cm] = confusion(truelabels,classout);
 fprintf('\nValidation confusion matrix:\n\n');
-cp = classperf(truelabels,classout);
-disp(cp.CountingMatrix);
-fprintf('accuracy: %f\n',cp.CorrectRate);
+disp(cm);
+fprintf('accuracy: %f\n',1-c);
