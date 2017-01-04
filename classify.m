@@ -1,12 +1,16 @@
 close all;
 
-K = 65;
+% HOGs parameters
+CellSize = [65 65];
+BlockSize = [2 2];
+BlockOverlap = ceil(BlockSize/2);
+NumBins = 9;
 
 I = imread('../data/leaf1/l1nr001.tif');
 I = square(I);
 I = imresize(I,[512 512]);
 I = rgb2gray(I);
-features = extractHOGFeatures(I,'CellSize',[K K]);
+features = extractHOGFeatures(I,'CellSize',CellSize,'BlockSize',BlockSize,'BlockOverlap',BlockOverlap,'NumBins',NumBins);
 hogFeatureSize = length(features);
 
 
@@ -28,7 +32,7 @@ for i=1:n
     I = imresize(I,[512 512]);
     I = rgb2gray(I);
     
-    [featureVector,hogVisualization] = extractHOGFeatures(I,'CellSize',[K K]);
+    [featureVector,hogVisualization] = extractHOGFeatures(I,'CellSize',CellSize,'BlockSize',BlockSize,'BlockOverlap',BlockOverlap,'NumBins',NumBins);
     inputs(:,i) = featureVector';
     plot(hogVisualization); drawnow;
     
@@ -53,9 +57,9 @@ hiddenLayerSize = 20;
 net = patternnet(hiddenLayerSize, trainFcn);
 
 % Setup Division of Data for Training, Validation, Testing
-net.divideParam.trainRatio = 70/100;
-net.divideParam.valRatio = 15/100;
-net.divideParam.testRatio = 15/100;
+net.divideParam.trainRatio = 80/100;
+net.divideParam.valRatio = 20/100;
+net.divideParam.testRatio = 0/100;
 
 % Train the Network
 [net,tr] = train(net,inputs,targets);
@@ -86,7 +90,7 @@ for i=1:n
     I = imresize(I,[512 512]);
     I = rgb2gray(I);
 
-    featureVector = extractHOGFeatures(I,'CellSize',[K K]);
+    featureVector = extractHOGFeatures(I,'CellSize',CellSize,'BlockSize',BlockSize,'BlockOverlap',BlockOverlap,'NumBins',NumBins);
     classout(:,i) = net(featureVector');
     
     class = int32(str2num(fn(2:end-9)));
