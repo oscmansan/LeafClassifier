@@ -1,7 +1,7 @@
 close all;
 
 % HOGs parameters
-CellSize = [65 65];
+CellSize = [64 64];
 BlockSize = [2 2];
 BlockOverlap = ceil(BlockSize/2);
 NumBins = 9;
