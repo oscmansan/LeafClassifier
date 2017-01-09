@@ -103,3 +103,4 @@ end
 fprintf('\nValidation confusion matrix:\n\n');
 disp(cm);
 fprintf('accuracy: %f\n',1-c);
+plotroc(truelabels,classout);
